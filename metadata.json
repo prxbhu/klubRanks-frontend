@@ -1,0 +1,5 @@
+{
+  "name": "ClubRank",
+  "description": "A social competitive tracker where friends compete on real-time leaderboards with chat and stats.",
+  "requestFramePermissions": []
+}
