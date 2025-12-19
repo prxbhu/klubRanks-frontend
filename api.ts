@@ -106,7 +106,7 @@ export async function getMyClubsApi(
 
 export async function createClubApi(
   token: string,
-  payload: { name: string; description?: string; is_private?: boolean },
+  payload: { name: string; description?: string; is_private?: boolean; action: string },
 ): Promise<BackendClub> {
   return apiFetch<BackendClub>(
     '/clubs',
@@ -116,6 +116,7 @@ export async function createClubApi(
         name: payload.name,
         description: payload.description ?? null,
         is_private: payload.is_private ?? false,
+        action: payload.action ?? "units",
       }),
     },
     token,

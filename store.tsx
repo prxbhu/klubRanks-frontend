@@ -160,7 +160,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   const createClub = useCallback(async (name: string, description: string, actionName: string) => {
     if (!token) return;
     try {
-        await api.createClubApi(token, { name, description });
+        await api.createClubApi(token, { name, description, action: actionName });
         await refreshClubs();
     } catch (e) {
         alert("Failed to create club");
