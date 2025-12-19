@@ -1,9 +1,8 @@
 export interface User {
   id: string;
   username: string;
-  avatarInitials: string;
   color: string;
-  avatarId?: string;
+  avatarId: string;
 }
 
 export interface Club {

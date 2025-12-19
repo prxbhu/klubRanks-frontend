@@ -130,13 +130,14 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
         const userObj = {
             id: res.user.id.toString(),
             username: res.user.username,
-            avatarInitials: style.initials,
+            avatarId: res.user.avatar_id ? res.user.avatar_id : style.initials,
             color: style.color
         };
 
         // Save to LocalStorage
         localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify(userObj));
+        console.log("setting user in local storage:", userObj);
         
         setToken(res.token);
         setCurrentUser(userObj);

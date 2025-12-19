@@ -1,32 +1,40 @@
-const API_BASE_URL =
-  (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080';
+const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://192.168.88.18:8080';
 
-async function apiFetch<T>(
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
-  token?: string | null,
+  token?: string,
 ): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
+  const res = await fetch(`${BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
-      ...(options.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
     },
+    ...options,
   });
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || res.statusText);
+    throw new ApiError(text || 'Request failed', res.status);
   }
 
-  // Safe JSON parsing
-  try {
-    const text = await res.text();
-    return text ? JSON.parse(text) : ({} as T);
-  } catch {
+  // some endpoints may return empty body
+  const contentLength = res.headers.get('content-length');
+  if (contentLength === '0' || res.status === 204) {
     return {} as T;
   }
+
+  return res.json();
 }
 
 // -------- Auth --------
@@ -50,7 +58,6 @@ export async function loginApi(
     body: JSON.stringify({
       username,
       password,
-      avatar_id: 'default',
     }),
   });
 }
