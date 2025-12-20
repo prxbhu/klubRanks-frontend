@@ -119,6 +119,56 @@ export const Landing: React.FC = () => {
         </div>
       </div>
 
+      {/* How It Works */}
+      <div className="w-full max-w-5xl px-4 pb-16">
+        <h2 className="text-3xl font-extrabold text-center text-gray-900 mb-12">
+          How It Works
+        </h2>
+
+        <div className="flex flex-col md:flex-row md:justify-between gap-12 md:gap-8">
+          
+          {/* Step 1 */}
+          <div className="flex flex-col items-center text-center flex-1">
+            <div className="w-12 h-12 rounded-full bg-green-400 text-white font-bold flex items-center justify-center mb-4">
+              1
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Create or Join
+            </h3>
+            <p className="text-gray-500 max-w-xs">
+              Start a new club or join an existing one using an invite link.
+            </p>
+          </div>
+
+          {/* Step 2 */}
+          <div className="flex flex-col items-center text-center flex-1">
+            <div className="w-12 h-12 rounded-full bg-green-400 text-white font-bold flex items-center justify-center mb-4">
+              2
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Increment Activity Counter
+            </h3>
+            <p className="text-gray-500 max-w-xs">
+              Tap +1 to increase your score (5 minute cooldown).
+            </p>
+          </div>
+
+          {/* Step 3 */}
+          <div className="flex flex-col items-center text-center flex-1">
+            <div className="w-12 h-12 rounded-full bg-green-400 text-white font-bold flex items-center justify-center mb-4">
+              3
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Climb the Ranks
+            </h3>
+            <p className="text-gray-500 max-w-xs">
+              Watch the leaderboard update in real time.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
       {/* Authentication Modal */}
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
