@@ -46,10 +46,16 @@ export const ClubView: React.FC = () => {
     const clubMembers = (id && members[id]) || [];
     const clubMessages = (id && messages[id]) || [];
 
+    // Polling for Club Data (Leaderboard, Messages)
     useEffect(() => {
-        if (id) {
+        if (!id) return;
+        
+        loadClubData(id); // Initial fetch
+        const interval = setInterval(() => {
             loadClubData(id);
-        }
+        }, 3000); // Poll every 3 seconds for active club data
+
+        return () => clearInterval(interval);
     }, [id, loadClubData]);
     
     const myStats = clubMembers.find(m => m.userId === currentUser?.id);
@@ -165,6 +171,7 @@ export const ClubView: React.FC = () => {
                 <UserProfileModal 
                     userId={selectedUserId} 
                     onClose={() => setSelectedUserId(null)} 
+                    allowLogout={false}
                 />
             )}
         </div>

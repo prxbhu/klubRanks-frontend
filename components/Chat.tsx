@@ -46,7 +46,8 @@ export const Chat: React.FC<ChatProps> = ({ messages, clubId }) => {
                 )}
 
                 {messages && messages.map((msg) => {
-                    if (msg.userId === 'system') {
+                    // Check type instead of userId
+                    if (msg.type === 'system') {
                         return (
                             <div key={msg.id} className="flex gap-2 items-center justify-center my-4 opacity-70">
                                 <TrendingUp className="w-3 h-3 text-green-500" />
@@ -57,8 +58,6 @@ export const Chat: React.FC<ChatProps> = ({ messages, clubId }) => {
 
                     const isMe = msg.userId === currentUser?.id;
                     const username = msg.username || 'Unknown';
-                    const initials = username.slice(0, 2).toUpperCase();
-                    const colorClass = getUserColor(username);
                     const displayAvatarId = isMe ? currentUser?.avatarId : msg.avatarId;
 
                     let timeDisplay = "";

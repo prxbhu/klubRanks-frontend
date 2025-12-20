@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Club, Member } from '../types';
 import { useApp } from '../store';
-import { X, Flame, Trophy, Target, LogOut, Moon, Sun, Edit2, Check } from 'lucide-react';
+import { X, LogOut, Moon, Sun, Edit2 } from 'lucide-react';
 import { Avatar, AVATAR_OPTIONS } from './Avatar';
 
 interface UserProfileModalProps {
   userId: string;
   onClose: () => void;
+  allowLogout?: boolean; // Added prop
 }
 
-export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onClose }) => {
+export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onClose, allowLogout = false }) => {
   const { clubs, members, currentUser, logout, theme, toggleTheme, updateAvatar } = useApp();
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   
@@ -47,9 +48,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
       username = sample.username;
       avatarId = sample.avatarId;
   }
-
-  const currentStreak = userClubsData.length > 0 ? Math.max(...userClubsData.map(d => d.membership.streak), 0) : 0;
-  const totalPoints = userClubsData.reduce((sum, d) => sum + d.membership.score, 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
@@ -124,28 +122,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
             </div>
           )}
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-2xl border border-orange-100 dark:border-orange-900/30">
-              <div className="flex items-center gap-2 mb-2 text-orange-600 dark:text-orange-400">
-                <Flame className="w-4 h-4 fill-orange-500" />
-                <span className="text-xs font-bold uppercase tracking-wider">Streak</span>
-              </div>
-              <div className="text-3xl font-black text-orange-700 dark:text-orange-400">{currentStreak}</div>
-            </div>
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-2xl border border-purple-100 dark:border-purple-900/30">
-              <div className="flex items-center gap-2 mb-2 text-purple-600 dark:text-purple-400">
-                <Trophy className="w-4 h-4 fill-purple-500" />
-                <span className="text-xs font-bold uppercase tracking-wider">Points</span>
-              </div>
-              <div className="text-3xl font-black text-purple-700 dark:text-purple-400">{totalPoints}</div>
-            </div>
-          </div>
+          {/* Stats section removed as requested */}
         </div>
 
         {/* Footer Actions */}
         <div className="p-6 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex flex-col gap-3">
-          {isMe && (
+          {/* Only show logout if isMe AND allowLogout is true */}
+          {isMe && allowLogout && (
             <button 
                 onClick={handleLogout}
                 className="w-full py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/30"

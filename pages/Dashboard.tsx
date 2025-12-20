@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../store';
 import { Button } from '../components/Button';
 import { Plus, Link as LinkIcon, Users, Trophy } from 'lucide-react';
-import { Club } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '../components/Input';
 import { UserProfileModal } from '../components/UserProfileModal';
 import { Avatar } from '../components/Avatar';
 
 export const Dashboard: React.FC = () => {
-  const { clubs, currentUser, createClub, joinClub } = useApp();
+  const { clubs, currentUser, createClub, joinClub, refreshClubs} = useApp();
   const navigate = useNavigate();
   
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
@@ -20,6 +19,16 @@ export const Dashboard: React.FC = () => {
   const [newClubDesc, setNewClubDesc] = useState('');
   const [newClubAction, setNewClubAction] = useState('Count');
   const [joinLink, setJoinLink] = useState('');
+
+  // Polling for Dashboard Data
+  useEffect(() => {
+    refreshClubs(); // Initial fetch
+    const interval = setInterval(() => {
+        refreshClubs();
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [refreshClubs]);
 
   const handleCreateClub = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +92,7 @@ export const Dashboard: React.FC = () => {
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">{club.name}</h3>
                   <div className="flex items-center gap-1 bg-gray-900 dark:bg-gray-800 text-white text-[10px] px-2 py-1 rounded-md font-medium">
-                     <span className="opacity-70">RANK</span> #3
+                     <span className="opacity-70">RANK</span> #{club.currentRank}
                   </div>
                 </div>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 line-clamp-1">{club.description}</p>
@@ -93,7 +102,7 @@ export const Dashboard: React.FC = () => {
                     <Users className="w-3.5 h-3.5" />
                     <span>{club.memberCount} members</span>
                   </div>
-                  <span>{club.activeText}</span>
+                  {/* <span>/{club.activeText}//</span> */}
                 </div>
               </div>
             </Link>
@@ -106,6 +115,7 @@ export const Dashboard: React.FC = () => {
         <UserProfileModal 
             userId={currentUser.id} 
             onClose={() => setShowProfile(false)} 
+            allowLogout={true}
         />
       )}
 

@@ -9,14 +9,18 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ clubId }) => {
-    const { leaveClub } = useApp();
+    const { clubs, leaveClub } = useApp();
     const navigate = useNavigate();
     const [copied, setCopied] = useState(false);
     
-    const displayLink = `Club ID: ${clubId}`;
+    // Find the club to get the code
+    const club = clubs.find(c => c.id === clubId);
+    const clubCode = club?.code || clubId; // Fallback to ID if code not found (should not happen with new backend)
+    
+    const displayLink = `Invite Code: ${clubCode}`;
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(clubId);
+        navigator.clipboard.writeText(clubCode);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -37,7 +41,7 @@ export const Settings: React.FC<SettingsProps> = ({ clubId }) => {
                 </div>
                 
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                    Share this Club ID with your friends. They can enter it on their dashboard to join instantly.
+                    Share this Club Code with your friends. They can enter it on their dashboard to join instantly.
                 </p>
 
                 <div className="flex gap-2">
@@ -52,7 +56,7 @@ export const Settings: React.FC<SettingsProps> = ({ clubId }) => {
                     </button>
                 </div>
                 <Button variant="secondary" fullWidth className="mt-4 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700" onClick={handleCopy}>
-                    {copied ? 'Copied!' : 'Copy Club ID'}
+                    {copied ? 'Copied!' : 'Copy Code'}
                 </Button>
             </div>
 

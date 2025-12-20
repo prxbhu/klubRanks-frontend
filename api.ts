@@ -1,4 +1,4 @@
-const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://192.168.88.18:8080';
+const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://192.168.1.12:8080';
 
 export class ApiError extends Error {
   status: number;
@@ -96,6 +96,9 @@ export interface BackendClub {
   number_of_members: number;
   created_by: number;
   created_at: string;
+  code: string;         
+  current_rank: number;
+  action: string;
 }
 
 export async function getMyClubsApi(
@@ -187,6 +190,7 @@ export interface BackendClubMessage {
   user: LeaderboardUser;
   message: string;
   timestamp: string;
+  type: string;
 }
 
 export async function getClubMessagesApi(

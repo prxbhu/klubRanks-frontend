@@ -9,11 +9,12 @@ export interface Club {
   id: string;
   name: string;
   description: string;
+  code: string;
   memberCount: number;
-  activeText: string;
   lastActive: string;
   actionName: string; // e.g. "Pages", "Pushups", "Count"
-  cooldownMinutes: number;
+  cooldownMinutes: number;    
+  currentRank: number;
 }
 
 export interface Member {
@@ -34,25 +35,25 @@ export interface Message {
   avatarId?: string;
   text: string;
   timestamp: string; // ISO string
+  type: 'user' | 'system';
 }
 
 export interface GraphDataPoint {
-    name: string;
-    You: number;
-    Leader: number;
+    day: string;
+    scores: { [username: string]: number };
 }
 
 export interface UserStats {
     score: number;
     rank: number;
     current_streak: number;
-    percentile: string;
+    longest_streak: number;
     graph_data: GraphDataPoint[];
 }
 
 export enum Tab {
   LEADERBOARD = 'LEADERBOARD',
-  STATS = 'STATS', // New feature
+  STATS = 'STATS',
   CHAT = 'CHAT',
   SETTINGS = 'SETTINGS'
 }

@@ -7,8 +7,8 @@ interface AppState {
   clubs: Club[];
   members: Record<string, Member[]>;
   messages: Record<string, Message[]>;
-  theme: 'light' | 'dark'; // <--- New State
-  toggleTheme: () => void; // <--- New Function
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
   login: (username: string, password: string) => Promise<void>;
   signup: (username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -19,6 +19,7 @@ interface AppState {
   sendMessage: (clubId: string, text: string) => Promise<void>;
   loadClubData: (clubId: string) => Promise<void>;
   updateAvatar: (avatarId: string) => Promise<void>;
+  refreshClubs: () => Promise<void>;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -47,7 +48,6 @@ const generateUserStyle = (username: string) => {
 };
 
 export const AppProvider = ({ children }: { children?: ReactNode }) => {
-  // --- Theme Logic ---
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
       const saved = localStorage.getItem('theme');
       if (saved === 'dark' || saved === 'light') return saved;
@@ -67,9 +67,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   const toggleTheme = useCallback(() => {
       setTheme(prev => prev === 'light' ? 'dark' : 'light');
   }, []);
-  // -------------------
 
-  // Safe localStorage init to prevent crashes
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
       try {
           const savedUser = localStorage.getItem('user');
@@ -105,8 +103,10 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
                  memberCount: c.number_of_members,
                  activeText: 'Active recently',
                  lastActive: new Date().toISOString(),
-                 actionName: 'Points', 
-                 cooldownMinutes: 10
+                 actionName: c.action || 'Points', 
+                 cooldownMinutes: 10,
+                 code: c.code,
+                 currentRank: c.current_rank
              }));
              setClubs(mappedClubs);
           }
@@ -116,7 +116,6 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       }
   }, [token, logout]);
 
-  // Initial Load
   useEffect(() => {
     if (token) {
         refreshClubs();
@@ -134,10 +133,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
             color: style.color
         };
 
-        // Save to LocalStorage
         localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify(userObj));
-        console.log("setting user in local storage:", userObj);
         
         setToken(res.token);
         setCurrentUser(userObj);
@@ -193,8 +190,6 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       if (!token || !currentUser) return;
       try {
           await api.updateAvatarApi(token, avatarId);
-          
-          // Update local state
           const updatedUser = { ...currentUser, avatarId };
           setCurrentUser(updatedUser);
           localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -208,7 +203,6 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       if (!token) return;
 
       try {
-          // Fetch Leaderboard
           const leaderboard = await api.getLeaderboardApi(token, clubId);
           const mappedMembers: Member[] = (leaderboard || []).map(entry => ({
               userId: entry.user.id.toString(),
@@ -222,7 +216,6 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
           }));
           setMembers(prev => ({ ...prev, [clubId]: mappedMembers }));
 
-          // Fetch Messages
           const backendMessages = await api.getClubMessagesApi(token, clubId);
           const mappedMessages: Message[] = (backendMessages || []).map((m, idx) => ({
               id: `msg-${idx}-${m.timestamp}`,
@@ -230,7 +223,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
               username: m.user.username,
               avatarId: m.user.avatar_id,
               text: m.message,
-              timestamp: m.timestamp
+              timestamp: m.timestamp,
+              type: (m.type as 'user' | 'system') || 'user' // Map the type here
           })).reverse(); 
           setMessages(prev => ({ ...prev, [clubId]: mappedMessages }));
 
@@ -265,7 +259,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     <AppContext.Provider value={{ 
         currentUser, clubs, members, messages, theme, toggleTheme,
         login, signup, logout, createClub, joinClub, leaveClub,
-        incrementScore, sendMessage, loadClubData , updateAvatar
+        incrementScore, sendMessage, loadClubData , updateAvatar, refreshClubs
     }}>
       {children}
     </AppContext.Provider>
