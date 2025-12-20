@@ -15,6 +15,8 @@ export interface Club {
   actionName: string; // e.g. "Pages", "Pushups", "Count"
   cooldownMinutes: number;    
   currentRank: number;
+  createdBy: string;
+  isPrivate: boolean;
 }
 
 export interface Member {

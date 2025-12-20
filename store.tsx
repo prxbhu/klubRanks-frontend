@@ -13,6 +13,7 @@ interface AppState {
   signup: (username: string, password: string) => Promise<void>;
   logout: () => void;
   createClub: (name: string, description: string, actionName: string) => Promise<void>;
+  updateClub: (clubId: string, name: string, description: string, actionName: string) => Promise<void>; // Added
   joinClub: (clubId: string) => Promise<void>;
   leaveClub: (clubId: string) => Promise<void>;
   incrementScore: (clubId: string) => Promise<boolean>;
@@ -106,7 +107,10 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
                  actionName: c.action || 'Points', 
                  cooldownMinutes: 10,
                  code: c.code,
-                 currentRank: c.current_rank
+                 currentRank: c.current_rank,
+                 createdBy: c.created_by.toString(), // Added mapping
+                 isPrivate: c.is_private
+
              }));
              setClubs(mappedClubs);
           }
@@ -161,6 +165,16 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
         await refreshClubs();
     } catch (e) {
         alert("Failed to create club");
+    }
+  }, [token, refreshClubs]);
+
+  const updateClub = useCallback(async (clubId: string, name: string, description: string, actionName: string) => {
+    if (!token) return;
+    try {
+        await api.updateClubApi(token, clubId, { name, description, action: actionName });
+        await refreshClubs();
+    } catch (e) {
+        alert("Failed to update club: " + (e as Error).message);
     }
   }, [token, refreshClubs]);
 
@@ -224,7 +238,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
               avatarId: m.user.avatar_id,
               text: m.message,
               timestamp: m.timestamp,
-              type: (m.type as 'user' | 'system') || 'user' // Map the type here
+              type: (m.type as 'user' | 'system') || 'user'
           })).reverse(); 
           setMessages(prev => ({ ...prev, [clubId]: mappedMessages }));
 
@@ -258,8 +272,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   return (
     <AppContext.Provider value={{ 
         currentUser, clubs, members, messages, theme, toggleTheme,
-        login, signup, logout, createClub, joinClub, leaveClub,
-        incrementScore, sendMessage, loadClubData , updateAvatar, refreshClubs
+        login, signup, logout, createClub, updateClub, joinClub, leaveClub,
+        incrementScore, sendMessage, loadClubData, updateAvatar, refreshClubs
     }}>
       {children}
     </AppContext.Provider>

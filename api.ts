@@ -73,8 +73,6 @@ export async function signupApi(
   });
 }
 
-// -------- Auth --------
-
 export async function updateAvatarApi(token: string, avatarId: string) {
   return apiFetch<{ message: string }>(
     '/users/avatar',
@@ -96,7 +94,7 @@ export interface BackendClub {
   number_of_members: number;
   created_by: number;
   created_at: string;
-  code: string;         
+  code: string;
   current_rank: number;
   action: string;
 }
@@ -120,6 +118,27 @@ export async function createClubApi(
         description: payload.description ?? null,
         is_private: payload.is_private ?? false,
         action: payload.action ?? "units",
+      }),
+    },
+    token,
+  );
+}
+
+// THIS FUNCTION WAS MISSING
+export async function updateClubApi(
+  token: string,
+  clubId: string,
+  payload: { name: string; description?: string; is_private?: boolean; action: string },
+): Promise<BackendClub> {
+  return apiFetch<BackendClub>(
+    `/clubs/${clubId}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({
+        name: payload.name,
+        description: payload.description ?? null,
+        is_private: payload.is_private ?? false,
+        action: payload.action,
       }),
     },
     token,
@@ -220,4 +239,3 @@ export async function sendMessageApi(
     token,
   );
 }
-
