@@ -173,6 +173,7 @@ export interface LeaderboardEntry {
   user: LeaderboardUser;
   score: number;
   current_streak: number;
+  longest_streak: number;
   last_checkedin?: string | null;
 }
 

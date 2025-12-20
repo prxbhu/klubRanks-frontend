@@ -226,7 +226,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
               clubId: clubId,
               score: entry.score,
               lastUpdate: entry.last_checkedin || new Date().toISOString(),
-              streak: entry.current_streak
+              streak: entry.current_streak,
+              longestStreak: entry.longest_streak
           }));
           setMembers(prev => ({ ...prev, [clubId]: mappedMembers }));
 

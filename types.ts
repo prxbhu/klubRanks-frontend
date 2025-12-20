@@ -26,8 +26,9 @@ export interface Member {
   avatarId?: string;
   clubId: string;
   score: number;
-  lastUpdate: string; // ISO string
-  streak: number; // New feature: daily streak
+  lastUpdate: string; 
+  streak: number;
+  longestStreak: number;
 }
 
 export interface Message {

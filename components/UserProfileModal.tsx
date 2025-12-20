@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Club, Member } from '../types';
 import { useApp } from '../store';
-import { X, LogOut, Moon, Sun, Edit2 } from 'lucide-react';
+import { X, LogOut, Moon, Sun, Edit2, Zap, Trophy, Clock } from 'lucide-react';
 import { Avatar, AVATAR_OPTIONS } from './Avatar';
+import { format } from 'date-fns';
 
 interface UserProfileModalProps {
   userId: string;
   onClose: () => void;
-  allowLogout?: boolean; // Added prop
+  allowLogout?: boolean;
+  activeClubId?: string; // New Prop to know context
 }
 
-export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onClose, allowLogout = false }) => {
+export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onClose, allowLogout = false, activeClubId }) => {
   const { clubs, members, currentUser, logout, theme, toggleTheme, updateAvatar } = useApp();
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
   
@@ -26,28 +28,37 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
       setIsEditingAvatar(false);
   };
 
+  // Find user details (fallback method if not "me")
+  let username = 'Unknown';
+  let avatarId: string | undefined = undefined;
+
+  // Gather club memberships for this user
   const userClubsData = clubs.reduce((acc, club) => {
     const clubMembers = members[club.id];
     if (clubMembers) {
       const membership = clubMembers.find(m => m.userId === userId);
       if (membership) {
         acc.push({ club, membership });
+        // Set user details from the first found membership if not already set
+        if (username === 'Unknown') {
+            username = membership.username;
+            avatarId = membership.avatarId;
+        }
       }
     }
     return acc;
   }, [] as { club: Club, membership: Member }[]);
 
-  let username = 'Unknown';
-  let avatarId: string | undefined = undefined;
-
+  // Override if currentUser
   if (isMe && currentUser) {
       username = currentUser.username;
       avatarId = currentUser.avatarId;
-  } else if (userClubsData.length > 0) {
-      const sample = userClubsData[0].membership;
-      username = sample.username;
-      avatarId = sample.avatarId;
   }
+
+  // --- Specific Club View (If activeClubId is present) ---
+  const activeMembership = activeClubId 
+    ? userClubsData.find(d => d.club.id === activeClubId)?.membership 
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
@@ -81,7 +92,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
           
-          {/* Avatar Selector (Netflix Style) */}
+          {/* Avatar Selector */}
           {isMe && isEditingAvatar && (
               <div className="animate-in fade-in zoom-in duration-300">
                   <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Choose your Avatar</h3>
@@ -101,7 +112,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
               </div>
           )}
 
-          {/* Theme Toggle */}
+          {/* Theme Toggle (Only for Me) */}
           {isMe && !isEditingAvatar && (
             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-3">
@@ -122,12 +133,71 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
             </div>
           )}
 
-          {/* Stats section removed as requested */}
+          {/* --- VIEW LOGIC --- */}
+          
+          {/* CASE 1: Specific Club View (Clicking another user inside a club) */}
+          {activeClubId && activeMembership && (
+            <div className="space-y-4">
+               <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Club Stats</h3>
+               <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl flex flex-col items-center text-center">
+                        <Zap className="w-5 h-5 text-yellow-500 mb-1" />
+                        <span className="text-2xl font-bold text-gray-900 dark:text-white">{activeMembership.streak}</span>
+                        <span className="text-[10px] text-gray-500 uppercase font-bold">Current Streak</span>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl flex flex-col items-center text-center">
+                        <Trophy className="w-5 h-5 text-orange-500 mb-1" />
+                        <span className="text-2xl font-bold text-gray-900 dark:text-white">{activeMembership.longestStreak || activeMembership.streak}</span>
+                        <span className="text-[10px] text-gray-500 uppercase font-bold">Longest Streak</span>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl flex flex-col items-center text-center col-span-2">
+                        <Clock className="w-5 h-5 text-blue-500 mb-1" />
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">
+                           {activeMembership.lastUpdate ? format(new Date(activeMembership.lastUpdate), 'MMM d, h:mm a') : 'Never'}
+                        </span>
+                        <span className="text-[10px] text-gray-500 uppercase font-bold">Last Checked In</span>
+                    </div>
+               </div>
+            </div>
+          )}
+
+          {/* CASE 2: Dashboard View (Clicking own profile) - List of Clubs */}
+          {!activeClubId && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Your Clubs</h3>
+              {userClubsData.length === 0 ? (
+                  <p className="text-center text-gray-500 py-4">Not a member of any clubs yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {userClubsData.map(({ club, membership }) => (
+                    <div key={club.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="font-bold text-gray-900 dark:text-white">{club.name}</h4>
+                        <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full font-bold">
+                           {membership.score} {club.actionName}
+                        </span>
+                      </div>
+                      <div className="flex gap-4 border-t border-gray-50 dark:border-gray-800 pt-3">
+                          <div className="flex-1 text-center border-r border-gray-50 dark:border-gray-800">
+                             <div className="text-lg font-bold text-gray-900 dark:text-white">{membership.streak}</div>
+                             <div className="text-[10px] text-gray-400 uppercase">Current</div>
+                          </div>
+                          <div className="flex-1 text-center">
+                             <div className="text-lg font-bold text-gray-900 dark:text-white">{membership.longestStreak || membership.streak}</div>
+                             <div className="text-[10px] text-gray-400 uppercase">Longest</div>
+                          </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
 
         {/* Footer Actions */}
         <div className="p-6 bg-white dark:bg-gray-900 border-t border-gray-50 dark:border-gray-800 flex flex-col gap-3">
-          {/* Only show logout if isMe AND allowLogout is true */}
           {isMe && allowLogout && (
             <button 
                 onClick={handleLogout}

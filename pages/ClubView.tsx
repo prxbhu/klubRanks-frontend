@@ -172,6 +172,7 @@ export const ClubView: React.FC = () => {
                     userId={selectedUserId} 
                     onClose={() => setSelectedUserId(null)} 
                     allowLogout={false}
+                    activeClubId={id}
                 />
             )}
         </div>
