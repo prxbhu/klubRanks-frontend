@@ -117,7 +117,7 @@ export const Dashboard: React.FC = () => {
                     <Users className="w-3.5 h-3.5" />
                     <span>{club.memberCount} members</span>
                   </div>
-                  <span>{club.activeText}</span>
+                  {/* <span>{club.activeText}</span> */}
                 </div>
               </div>
             </Link>
