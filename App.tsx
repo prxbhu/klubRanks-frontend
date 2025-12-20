@@ -4,6 +4,7 @@ import { AppProvider, useApp } from './store';
 import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
 import { ClubView } from './pages/ClubView';
+import { JoinClub } from './pages/JoinClub'; 
 
 const PrivateRoute = ({ children }: { children?: React.ReactNode }) => {
   const { currentUser } = useApp();
@@ -14,6 +15,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<LandingWrapper />} />
+      <Route path="/join/:code" element={<JoinClub />} /> {/* New Route */}
       <Route 
         path="/dashboard" 
         element={

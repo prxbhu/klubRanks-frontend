@@ -145,9 +145,9 @@ export async function updateClubApi(
   );
 }
 
-export async function addMemberApi(token: string, clubId: string) {
+export async function addMemberApi(token: string, clubCode: string) {
   return apiFetch<{ message: string }>(
-    `/clubs/${clubId}/members`,
+    `/clubs/join/${clubCode}`, // Updated to new route
     { method: 'POST' },
     token,
   );

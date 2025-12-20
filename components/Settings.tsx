@@ -20,6 +20,9 @@ export const Settings: React.FC<SettingsProps> = ({ clubId }) => {
     const club = clubs.find(c => c.id === clubId);
     const clubCode = club?.code || clubId; 
     
+    // Construct full URL
+    const shareUrl = `${window.location.origin}/#/join/${clubCode}`;
+    
     // Local state for editing form
     const [editName, setEditName] = useState(club?.name || '');
     const [editDesc, setEditDesc] = useState(club?.description || '');
@@ -28,7 +31,7 @@ export const Settings: React.FC<SettingsProps> = ({ clubId }) => {
     const isCreator = currentUser && club && currentUser.id === club.createdBy;
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(clubCode);
+        navigator.clipboard.writeText(shareUrl); // Copy URL instead of code
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -48,7 +51,6 @@ export const Settings: React.FC<SettingsProps> = ({ clubId }) => {
 
     const toggleEdit = () => {
         if (!isEditing) {
-            // Reset form to current values when opening edit
             setEditName(club?.name || '');
             setEditDesc(club?.description || '');
             setEditAction(club?.actionName || '');
@@ -66,12 +68,12 @@ export const Settings: React.FC<SettingsProps> = ({ clubId }) => {
                 </div>
                 
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                    Share this Club Code with your friends.
+                    Share this link with your friends to let them join instantly.
                 </p>
 
                 <div className="flex gap-2">
-                    <div className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-mono flex items-center">
-                        Invite Code: {clubCode}
+                    <div className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-mono flex items-center overflow-x-auto whitespace-nowrap scrollbar-hide">
+                        {shareUrl}
                     </div>
                     <button 
                         onClick={handleCopy}

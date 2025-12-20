@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../store';
 import { Button } from '../components/Button';
 import { Plus, Link as LinkIcon, Users, Trophy } from 'lucide-react';
@@ -8,8 +8,9 @@ import { UserProfileModal } from '../components/UserProfileModal';
 import { Avatar } from '../components/Avatar';
 
 export const Dashboard: React.FC = () => {
-  const { clubs, currentUser, createClub, joinClub, refreshClubs} = useApp();
+  const { clubs, currentUser, createClub, joinClub, refreshClubs } = useApp();
   const navigate = useNavigate();
+  const joinAttempted = useRef(false); // Prevent double firing
   
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const [isJoinModalOpen, setJoinModalOpen] = useState(false);
@@ -20,12 +21,27 @@ export const Dashboard: React.FC = () => {
   const [newClubAction, setNewClubAction] = useState('Count');
   const [joinLink, setJoinLink] = useState('');
 
+  // Handle Pending Join
+  useEffect(() => {
+    const pendingCode = sessionStorage.getItem('pendingClubJoin');
+    if (pendingCode && !joinAttempted.current) {
+        joinAttempted.current = true;
+        
+        // Small delay to ensure auth state is settled
+        setTimeout(async () => {
+            console.log("Processing pending join for:", pendingCode);
+            await joinClub(pendingCode);
+            sessionStorage.removeItem('pendingClubJoin');
+        }, 500);
+    }
+  }, [joinClub]);
+
   // Polling for Dashboard Data
   useEffect(() => {
-    refreshClubs(); // Initial fetch
+    refreshClubs(); 
     const interval = setInterval(() => {
         refreshClubs();
-    }, 5000); // Poll every 5 seconds
+    }, 5000); 
 
     return () => clearInterval(interval);
   }, [refreshClubs]);
@@ -64,7 +80,6 @@ export const Dashboard: React.FC = () => {
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Your Clubs</h1>
         </div>
         
-        {/* Clickable User Avatar */}
         <button 
             onClick={() => setShowProfile(true)}
             className="transition-transform active:scale-95"
@@ -102,7 +117,7 @@ export const Dashboard: React.FC = () => {
                     <Users className="w-3.5 h-3.5" />
                     <span>{club.memberCount} members</span>
                   </div>
-                  {/* <span>/{club.activeText}//</span> */}
+                  <span>{club.activeText}</span>
                 </div>
               </div>
             </Link>
