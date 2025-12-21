@@ -292,8 +292,6 @@ const handleIncrement = async () => {
         {activeTab === Tab.STATS && (
           <Stats
             club={club}
-            members={clubMembers}
-            currentUserId={currentUser?.id || ''}
           />
         )}
         {activeTab === Tab.CHAT && (

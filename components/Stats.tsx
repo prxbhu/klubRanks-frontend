@@ -50,41 +50,73 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
   const axisColor = theme === 'dark' ? '#9ca3af' : '#6b7280';
   const gridColor = theme === 'dark' ? '#374151' : '#e5e7eb';
 
+
+
+
   const { chartData, players, colorMap } = useMemo(() => {
-    if (!stats?.graph_data) {
-      return {
-        chartData: [],
-        players: [],
-        colorMap: {} as Record<string, string>,
-      };
+
+  if (!stats?.graph_data) {
+    return {
+      chartData: [],
+      players: [],
+      colorMap: {} as Record<string, string>,
+    };
+  }
+
+  // 1. Collect all players
+  const playerSet = new Set<string>();
+  stats.graph_data.forEach(point => {
+    Object.keys(point.scores || {}).forEach(p => playerSet.add(p));
+  });
+
+  const playersArr = Array.from(playerSet);
+
+  // 2. Normalize data: missing = 0
+  const data = stats.graph_data.map(point => {
+    const normalized: Record<string, number | string> = {
+      day: point.day,
+    };
+
+    playersArr.forEach(player => {
+      normalized[player] =
+        typeof point.scores?.[player] === 'number'
+          ? point.scores[player]
+          : 0;
+    });
+
+    return normalized;
+  });
+
+  // 3. Assign colors
+  const colors: Record<string, string> = {};
+  let colorIdx = 0;
+
+  playersArr.forEach(p => {
+    if (p === 'You') {
+      colors[p] = YOU_COLOR;
+    } else {
+      colors[p] = OTHER_COLORS[colorIdx % OTHER_COLORS.length];
+      colorIdx++;
     }
+  });
 
-    const playerSet = new Set<string>();
+  return {
+    chartData: data,
+    players: playersArr,
+    colorMap: colors,
+  };
+}, [stats]);
 
-    const data = stats.graph_data.map(point => {
-      Object.keys(point.scores || {}).forEach(p => playerSet.add(p));
-      return {
-        day: point.day,
-        ...point.scores,
-      };
-    });
+    //select "You" by default if present
+      useEffect(() => {
+      if (!players.length) return;
 
-    const playersArr = Array.from(playerSet);
-
-    const colors: Record<string, string> = {};
-    let colorIdx = 0;
-
-    playersArr.forEach(p => {
-      if (p === 'You') {
-        colors[p] = YOU_COLOR;
-      } else {
-        colors[p] = OTHER_COLORS[colorIdx % OTHER_COLORS.length];
-        colorIdx++;
+      // Select "You" by default if present
+      if (players.includes('You')) {
+        setActivePlayer('You');
       }
-    });
+    }, [players]);
 
-    return { chartData: data, players: playersArr, colorMap: colors };
-  }, [stats]);
 
   const hasSinglePoint =
     chartData.filter(d =>
@@ -115,9 +147,13 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
           Tap a name below to focus on a player
         </p>
 
-        <div className="h-64 w-full">
+        <div className="h-64 w-full -ml-2 sm:ml-0">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
+            <LineChart
+              data={chartData}
+              margin={{ top: 10, right: 8, left: -12, bottom: 0 }}
+            >
+
               <CartesianGrid stroke={gridColor} vertical={false} />
               <XAxis
                 dataKey="day"
@@ -129,6 +165,7 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: axisColor, fontSize: 12 }}
+                width={28}
                 allowDecimals={false}
               />
 
@@ -144,15 +181,31 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
                     stroke={colorMap[player]}
                     strokeWidth={highlighted ? 4 : 2}
                     opacity={dimmed ? 0.15 : 1}
-                    dot={{
-                      r: highlighted
+                    dot={(props: any) => {
+                      const { cx, cy, value } = props;
+
+                      // Hide dot if value is 0 or coordinates are missing
+                      if (value === 0 || cx == null || cy == null) {
+                        return null;
+                      }
+
+                      const r = highlighted
                         ? 7
                         : hasSinglePoint
                         ? 6
-                        : 4,
-                      fill: colorMap[player],
-                      opacity: dimmed ? 0.2 : 1,
+                        : 4;
+
+                      return (
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r={r}
+                          fill={colorMap[player]}
+                          opacity={dimmed ? 0.2 : 1}
+                        />
+                      );
                     }}
+
                     activeDot={false}
                     connectNulls
                   >
