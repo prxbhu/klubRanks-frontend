@@ -9,6 +9,7 @@ type AuthMode = 'login' | 'signup';
 export const Landing: React.FC = () => {
   const { login, signup } = useApp();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   
   const [username, setUsername] = useState('');
@@ -31,6 +32,7 @@ export const Landing: React.FC = () => {
     }
 
     try {
+      setIsLoading(true);
       if (authMode === 'signup') {
         if (password !== confirmPassword) {
           setError('Passwords do not match');
@@ -44,6 +46,8 @@ export const Landing: React.FC = () => {
     } catch (err) {
       // Error is handled in store but we can catch here if needed
       console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -170,6 +174,7 @@ export const Landing: React.FC = () => {
       </div>
 
       {/* Authentication Modal */}
+
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 duration-300">
@@ -193,8 +198,12 @@ export const Landing: React.FC = () => {
             <form onSubmit={handleAuth} className="space-y-4">
               <div className="flex gap-2 p-1 bg-gray-100 rounded-xl mb-6 relative">
                 <div 
-                  className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300 ${authMode === 'signup' ? 'translate-x-[calc(100%+4px)]' : 'translate-x-0'}`}
+                  className={`absolute top-1 bottom-1 left-1 w-[calc(50%-0.5rem)]
+                    bg-white rounded-lg shadow-sm transition-transform duration-300
+                    ${authMode === 'signup' ? 'translate-x-full' : 'translate-x-0'}
+                  `}
                 />
+
                 <button 
                   type="button" 
                   onClick={() => { setAuthMode('login'); setError(''); }}
@@ -244,7 +253,7 @@ export const Landing: React.FC = () => {
                 />
               )}
 
-              <Button fullWidth type="submit" className="mt-4">
+              <Button fullWidth type="submit" className={`mt-4 ${isLoading ? 'opacity-60 pointer-events-none' : ''}`}>
                 {authMode === 'login' ? 'Log In' : 'Create Account'} <ArrowRight className="w-4 h-4" />
               </Button>
             </form>
@@ -259,6 +268,18 @@ export const Landing: React.FC = () => {
           </div>
         </div>
       )}
+
+      {isLoading && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="bg-white rounded-2xl px-6 py-5 shadow-xl flex flex-col items-center">
+          <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin mb-3" />
+          <p className="text-sm font-semibold text-gray-700">
+            {authMode === 'login' ? 'Logging you in…' : 'Creating your account…'}
+          </p>
+        </div>
+      </div>
+    )}
+
     </div>
   );
 };
