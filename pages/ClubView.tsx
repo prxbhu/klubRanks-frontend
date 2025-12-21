@@ -179,9 +179,9 @@ const handleIncrement = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
+    <div className="h-screen bg-white dark:bg-gray-900 flex flex-col overflow-hidden">
       {/* ---------- Header ---------- */}
-      <div className="p-4 flex items-center sticky top-0 z-20 border-b dark:border-gray-800">
+      <div className="p-4 flex items-center sticky top-0 z-40 border-b dark:border-gray-800 bg-white dark:bg-gray-900">
         <Link
           to="/dashboard"
           className="p-2 -ml-2 text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
@@ -204,7 +204,7 @@ const handleIncrement = async () => {
       </div>
 
       {/* ---------- Score ---------- */}
-      <div className="flex flex-col items-center py-6 border-b dark:border-gray-800 sticky top-[60px] z-0">
+      <div className="flex flex-col items-center py-6 border-b dark:border-gray-800 sticky top-[60px] z-30 bg-white dark:bg-gray-900">
         <span className="text-sm font-semibold text-gray-500 mb-2">
           Your {club.actionName}
         </span>
@@ -253,7 +253,7 @@ const handleIncrement = async () => {
       </div>
 
       {/* ---------- Tabs ---------- */}
-      <div className="flex justify-around border-b dark:border-gray-800 sticky top-[280px] bg-white dark:bg-gray-900 z-10">
+      <div className="flex justify-around border-b dark:border-gray-800 sticky top-[280px] z-20 bg-white dark:bg-gray-900">
         <TabButton
           active={activeTab === Tab.LEADERBOARD}
           onClick={() => setActiveTab(Tab.LEADERBOARD)}
@@ -281,7 +281,7 @@ const handleIncrement = async () => {
       </div>
 
       {/* ---------- Content ---------- */}
-      <div className="flex-1 bg-gray-50 dark:bg-gray-950 relative z-10">
+      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 relative">
         {activeTab === Tab.LEADERBOARD && (
           <Leaderboard
             members={clubMembers}
