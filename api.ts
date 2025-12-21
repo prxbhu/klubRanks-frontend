@@ -1,5 +1,4 @@
-const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://192.168.1.12:8080';
-
+const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://192.168.88.18:8080';
 export class ApiError extends Error {
   status: number;
 
@@ -23,18 +22,15 @@ export async function apiFetch<T>(
     ...options,
   });
 
+  const data = await res.json().catch(() => null);
+
   if (!res.ok) {
-    const text = await res.text();
-    throw new ApiError(text || 'Request failed', res.status);
+    throw new Error(
+      data?.message || data?.error || `Request failed (${res.status})`,
+    );
   }
 
-  // some endpoints may return empty body
-  const contentLength = res.headers.get('content-length');
-  if (contentLength === '0' || res.status === 204) {
-    return {} as T;
-  }
-
-  return res.json();
+  return data;
 }
 
 // -------- Auth --------
@@ -124,7 +120,7 @@ export async function createClubApi(
   );
 }
 
-// THIS FUNCTION WAS MISSING
+
 export async function updateClubApi(
   token: string,
   clubId: string,

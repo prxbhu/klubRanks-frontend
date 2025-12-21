@@ -13,7 +13,7 @@ interface AppState {
   signup: (username: string, password: string) => Promise<void>;
   logout: () => void;
   createClub: (name: string, description: string, actionName: string) => Promise<void>;
-  updateClub: (clubId: string, name: string, description: string, actionName: string) => Promise<void>; // Added
+  updateClub: (clubId: string, name: string, description: string, actionName: string) => Promise<void>; 
   joinClub: (clubId: string) => Promise<void>;
   leaveClub: (clubId: string) => Promise<void>;
   incrementScore: (clubId: string) => Promise<boolean>;
@@ -184,7 +184,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
         await api.addMemberApi(token, clubId);
         await refreshClubs();
     } catch (e) {
-        alert("Failed to join club");
+         alert((e as Error).message);
     }
   }, [token, refreshClubs]);
 

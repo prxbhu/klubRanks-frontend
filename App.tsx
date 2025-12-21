@@ -15,7 +15,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<LandingWrapper />} />
-      <Route path="/join/:code" element={<JoinClub />} /> {/* New Route */}
+      <Route path="/join/:code" element={<JoinClub />} />
       <Route 
         path="/dashboard" 
         element={
