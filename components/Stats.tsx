@@ -16,13 +16,16 @@ interface StatsProps {
   club: Club;
 }
 
-const YOU_COLOR = '#22c55e'; // green-500
+const YOU_COLOR = '#22c55e'; // green
 const OTHER_COLORS = ['#60a5fa', '#f59e0b', '#a78bfa', '#f87171'];
 
 export const Stats: React.FC<StatsProps> = ({ club }) => {
   const { theme } = useApp();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // NEW: selected player from legend
+  const [activePlayer, setActivePlayer] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -48,8 +51,13 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
   const gridColor = theme === 'dark' ? '#374151' : '#e5e7eb';
 
   const { chartData, players, colorMap } = useMemo(() => {
-    if (!stats?.graph_data)
-      return { chartData: [], players: [], colorMap: {} as Record<string, string> };
+    if (!stats?.graph_data) {
+      return {
+        chartData: [],
+        players: [],
+        colorMap: {} as Record<string, string>,
+      };
+    }
 
     const playerSet = new Set<string>();
 
@@ -75,11 +83,7 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
       }
     });
 
-    return {
-      chartData: data,
-      players: playersArr,
-      colorMap: colors,
-    };
+    return { chartData: data, players: playersArr, colorMap: colors };
   }, [stats]);
 
   const hasSinglePoint =
@@ -97,6 +101,9 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
 
   if (!stats) return null;
 
+  const isDimmed = (player: string) =>
+    activePlayer !== null && activePlayer !== player;
+
   return (
     <div className="p-5 space-y-6 pb-28">
       {/* GRAPH */}
@@ -105,7 +112,7 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
           Weekly Activity
         </h3>
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-          Your activity compared with others
+          Tap a name below to focus on a player
         </p>
 
         <div className="h-64 w-full">
@@ -125,63 +132,84 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
                 allowDecimals={false}
               />
 
-              {players.map(player => (
-                <Line
-                  key={player}
-                  type="monotone"
-                  dataKey={player}
-                  stroke={colorMap[player]}
-                  strokeWidth={player === 'You' ? 3 : 2}
-                  dot={{
-                    r: hasSinglePoint ? 6 : 4,
-                    strokeWidth: 2,
-                    fill: colorMap[player],
-                  }}
-                  activeDot={false}
-                  connectNulls
-                >
-                  {hasSinglePoint && (
-                    <LabelList
-                      dataKey={player}
-                      position="top"
-                      formatter={(v: number) =>
-                        v !== undefined ? `${player}: ${v}` : ''
-                      }
-                      style={{
-                        fontSize: 11,
-                        fill: colorMap[player],
-                        fontWeight: player === 'You' ? 600 : 500,
-                      }}
-                    />
-                  )}
-                </Line>
-              ))}
+              {players.map(player => {
+                const dimmed = isDimmed(player);
+                const highlighted = activePlayer === player;
+
+                return (
+                  <Line
+                    key={player}
+                    type="monotone"
+                    dataKey={player}
+                    stroke={colorMap[player]}
+                    strokeWidth={highlighted ? 4 : 2}
+                    opacity={dimmed ? 0.15 : 1}
+                    dot={{
+                      r: highlighted
+                        ? 7
+                        : hasSinglePoint
+                        ? 6
+                        : 4,
+                      fill: colorMap[player],
+                      opacity: dimmed ? 0.2 : 1,
+                    }}
+                    activeDot={false}
+                    connectNulls
+                  >
+                    {hasSinglePoint && !dimmed && (
+                      <LabelList
+                        dataKey={player}
+                        position="top"
+                        formatter={(v: number) =>
+                          v !== undefined ? `${player}: ${v}` : ''
+                        }
+                        style={{
+                          fontSize: 11,
+                          fill: colorMap[player],
+                          fontWeight: highlighted ? 700 : 500,
+                        }}
+                      />
+                    )}
+                  </Line>
+                );
+              })}
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        {/* LEGEND */}
+        {/* INTERACTIVE LEGEND */}
         <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
-          {players.map(player => (
-            <div
-              key={player}
-              className="flex items-center gap-2 text-xs font-medium"
-            >
-              <span
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: colorMap[player] }}
-              />
-              <span
-                className={
-                  player === 'You'
-                    ? 'text-gray-900 dark:text-white font-semibold'
-                    : 'text-gray-600 dark:text-gray-400'
+          {players.map(player => {
+            const active = activePlayer === player;
+
+            return (
+              <button
+                key={player}
+                onClick={() =>
+                  setActivePlayer(prev =>
+                    prev === player ? null : player,
+                  )
                 }
+                className={`flex items-center gap-2 text-xs font-medium transition-opacity ${
+                  activePlayer && !active ? 'opacity-40' : ''
+                }`}
               >
-                {player}
-              </span>
-            </div>
-          ))}
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: colorMap[player] }}
+                />
+                <span
+                  className={
+                    player === 'You'
+                      ? 'font-semibold text-gray-900 dark:text-white'
+                      : 'text-gray-600 dark:text-gray-400'
+                  }
+                >
+                  {player}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
