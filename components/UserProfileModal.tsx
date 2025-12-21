@@ -163,36 +163,49 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
 
           {/* CASE 2: Dashboard View (Clicking own profile) - List of Clubs */}
           {!activeClubId && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Your Clubs</h3>
-              {userClubsData.length === 0 ? (
-                  <p className="text-center text-gray-500 py-4">Not a member of any clubs yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {userClubsData.map(({ club, membership }) => (
-                    <div key={club.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
-                      <div className="flex justify-between items-start mb-3">
-                        <h4 className="font-bold text-gray-900 dark:text-white">{club.name}</h4>
-                        <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full font-bold">
-                           {membership.score} {club.actionName}
-                        </span>
-                      </div>
-                      <div className="flex gap-4 border-t border-gray-50 dark:border-gray-800 pt-3">
-                          <div className="flex-1 text-center border-r border-gray-50 dark:border-gray-800">
-                             <div className="text-lg font-bold text-gray-900 dark:text-white">{membership.streak}</div>
-                             <div className="text-[10px] text-gray-400 uppercase">Current</div>
-                          </div>
-                          <div className="flex-1 text-center">
-                             <div className="text-lg font-bold text-gray-900 dark:text-white">{membership.longestStreak || membership.streak}</div>
-                             <div className="text-[10px] text-gray-400 uppercase">Longest</div>
-                          </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+  <div className="space-y-4">
+    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+      Active Clubs
+    </h3>
+
+    {userClubsData.length === 0 ? (
+      <p className="text-center text-gray-500 py-6 text-sm">
+        Join a club or check in to existing clubs
+      </p>
+    ) : (
+      <div className="space-y-3">
+        {userClubsData.map(({ club, membership }) => (
+          <div
+            key={club.id}
+            className="bg-white dark:bg-gray-900 rounded-xl px-4 py-3 border border-gray-100 dark:border-gray-800"
+          >
+            {/* Top row */}
+            <div className="flex justify-between items-center">
+              <h4 className="font-semibold text-gray-900 dark:text-white truncate">
+                {club.name}
+              </h4>
+
+              <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                {membership.score} {club.actionName}
+              </div>
             </div>
-          )}
+
+            {/* Bottom row */}
+            <div className="flex justify-between items-center mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <span>
+                🔥 {membership.streak} day streak
+              </span>
+              <span>
+                ⏱ {formatRelativeTime(membership.lastUpdate)}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
 
         </div>
 
@@ -217,3 +230,17 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ userId, onCl
     </div>
   );
 };
+
+function formatRelativeTime(dateString: string) {
+  const diffMs = Date.now() - new Date(dateString).getTime();
+  const mins = Math.floor(diffMs / 60000);
+
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}

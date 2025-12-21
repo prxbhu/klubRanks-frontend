@@ -92,7 +92,7 @@ export const Dashboard: React.FC = () => {
       <div className="px-4 py-6">
         <div className="flex gap-3 mb-8">
           <Button variant="secondary" className="flex-1 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700" onClick={() => setJoinModalOpen(true)}>
-            <LinkIcon className="w-4 h-4" /> Join with Link
+            <LinkIcon className="w-4 h-4" /> Join Club
           </Button>
           <Button className="flex-1 text-sm" onClick={() => setCreateModalOpen(true)}>
             <Plus className="w-4 h-4" /> Create Club
@@ -107,7 +107,7 @@ export const Dashboard: React.FC = () => {
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">{club.name}</h3>
                   <div className="flex items-center gap-1 bg-gray-900 dark:bg-gray-800 text-white text-[10px] px-2 py-1 rounded-md font-medium">
-                     <span className="opacity-70">RANK</span> #{club.currentRank}
+                     <span className="opacity-70">Rank:</span>{club.currentRank}
                   </div>
                 </div>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 line-clamp-1">{club.description}</p>
@@ -117,7 +117,7 @@ export const Dashboard: React.FC = () => {
                     <Users className="w-3.5 h-3.5" />
                     <span>{club.memberCount} members</span>
                   </div>
-                  {/* <span>{club.activeText}</span> */}
+                  <span>{club.actionName}</span>
                 </div>
               </div>
             </Link>
@@ -155,12 +155,12 @@ export const Dashboard: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 duration-200 border dark:border-gray-800">
             <h2 className="text-xl font-bold mb-1 dark:text-white">Join a Club</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Enter an invite link or Club ID.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Enter Club Code.</p>
             <form onSubmit={handleJoinClub} className="space-y-4">
               <Input 
                 className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                label="Invite Link / ID" 
-                placeholder="e.g. c2, or clubrank.app/join/c2" 
+                label="Invite Code" 
+                placeholder="e.g. D63QJTIX" 
                 value={joinLink} 
                 onChange={e => setJoinLink(e.target.value)} 
                 autoFocus
