@@ -1,131 +1,231 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Club, Member, UserStats } from '../types';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  LabelList,
+} from 'recharts';
+import { Club, UserStats } from '../types';
 import { useApp } from '../store';
 import { getUserStatsApi } from '../api';
 
 interface StatsProps {
-    club: Club;
-    members: Member[];
-    currentUserId: string;
+  club: Club;
 }
 
+const YOU_COLOR = '#22c55e'; // green-500
+const OTHER_COLORS = ['#60a5fa', '#f59e0b', '#a78bfa', '#f87171'];
+
 export const Stats: React.FC<StatsProps> = ({ club }) => {
-    const { theme } = useApp();
-    const [stats, setStats] = useState<UserStats | null>(null);
-    const [loading, setLoading] = useState(true);
+  const { theme } = useApp();
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    const data = await getUserStatsApi(token, club.id);
-                    setStats(data);
-                } catch (e) {
-                    console.error("Failed to fetch stats", e);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        };
+  useEffect(() => {
+    const fetchStats = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-        fetchStats();
-        // Poll every 5 seconds
-        const interval = setInterval(fetchStats, 5000);
-        return () => clearInterval(interval);
-    }, [club.id]);
+      try {
+        const data = await getUserStatsApi(token, club.id);
+        setStats(data);
+      } catch (e) {
+        console.error('Failed to fetch stats', e);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const axisColor = theme === 'dark' ? '#6b7280' : '#9ca3af'; 
-    const gridColor = theme === 'dark' ? '#374151' : '#f3f4f6'; 
-    const tooltipBg = theme === 'dark' ? '#1f2937' : '#ffffff'; 
-    const tooltipText = theme === 'dark' ? '#f3f4f6' : '#111827'; 
+    fetchStats();
+    const interval = setInterval(fetchStats, 5000);
+    return () => clearInterval(interval);
+  }, [club.id]);
 
-    // Transform data for Recharts: Flatten the 'scores' object into the main object
-    const { chartData, leaderKey } = useMemo(() => {
-        if (!stats?.graph_data) return { chartData: [], leaderKey: 'Leader' };
+  const axisColor = theme === 'dark' ? '#9ca3af' : '#6b7280';
+  const gridColor = theme === 'dark' ? '#374151' : '#e5e7eb';
 
-        let foundLeader = 'Leader';
-        
-        const data = stats.graph_data.map(point => {
-            // Find a key that isn't "You" to identify the competitor/leader
-            const keys = Object.keys(point.scores || {});
-            const other = keys.find(k => k !== 'You');
-            if (other) foundLeader = other;
+  const { chartData, players, colorMap } = useMemo(() => {
+    if (!stats?.graph_data)
+      return { chartData: [], players: [], colorMap: {} as Record<string, string> };
 
-            return {
-                name: point.day,
-                ...point.scores // Spread scores: { You: 10, vishruth: 12 }
-            };
-        });
+    const playerSet = new Set<string>();
 
-        return { chartData: data, leaderKey: foundLeader };
-    }, [stats]);
+    const data = stats.graph_data.map(point => {
+      Object.keys(point.scores || {}).forEach(p => playerSet.add(p));
+      return {
+        day: point.day,
+        ...point.scores,
+      };
+    });
 
-    if (loading) {
-        return <div className="p-10 text-center text-gray-400">Loading stats...</div>;
-    }
+    const playersArr = Array.from(playerSet);
 
-    const myStreak = stats?.current_streak || 0;
-    const longestStreak = stats?.longest_streak || 0;
+    const colors: Record<string, string> = {};
+    let colorIdx = 0;
 
+    playersArr.forEach(p => {
+      if (p === 'You') {
+        colors[p] = YOU_COLOR;
+      } else {
+        colors[p] = OTHER_COLORS[colorIdx % OTHER_COLORS.length];
+        colorIdx++;
+      }
+    });
+
+    return {
+      chartData: data,
+      players: playersArr,
+      colorMap: colors,
+    };
+  }, [stats]);
+
+  const hasSinglePoint =
+    chartData.filter(d =>
+      players.some(p => typeof d[p] === 'number'),
+    ).length === 1;
+
+  if (loading) {
     return (
-        <div className="p-6 space-y-6 pb-24">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm transition-colors duration-200">
-                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Weekly Activity</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Compare with {leaderKey === 'Leader' ? 'others' : leaderKey}.</p>
-                
-                <div className="h-64 w-full -ml-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart
-                            data={chartData}
-                            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                        >
-                            <defs>
-                                <linearGradient id="colorYou" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#4ade80" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#4ade80" stopOpacity={0}/>
-                                </linearGradient>
-                                <linearGradient id="colorLeader" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#cbd5e1" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#cbd5e1" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: axisColor}} dy={10} />
-                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: axisColor}} />
-                            <Tooltip 
-                                contentStyle={{
-                                    borderRadius: '12px', 
-                                    border: 'none', 
-                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                                    backgroundColor: tooltipBg,
-                                    color: tooltipText
-                                }}
-                                itemStyle={{ color: tooltipText }}
-                                labelStyle={{ color: axisColor }}
-                            />
-                            <CartesianGrid vertical={false} stroke={gridColor} />
-                            {/* Competitor Area */}
-                            <Area type="monotone" dataKey={leaderKey} stroke="#cbd5e1" fillOpacity={1} fill="url(#colorLeader)" strokeWidth={2} />
-                            {/* User Area */}
-                            <Area type="monotone" dataKey="You" stroke="#4ade80" fillOpacity={1} fill="url(#colorYou)" strokeWidth={3} />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm text-center transition-colors duration-200">
-                    <span className="block text-3xl font-bold text-gray-900 dark:text-white mb-1">{longestStreak}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Longest Streak</span>
-                </div>
-                <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm text-center transition-colors duration-200">
-                    <span className="block text-3xl font-bold text-green-500 mb-1">🔥 {myStreak}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Current Streak</span>
-                </div>
-            </div>
-        </div>
+      <div className="p-10 text-center text-gray-400">
+        Loading stats…
+      </div>
     );
+  }
+
+  if (!stats) return null;
+
+  return (
+    <div className="p-5 space-y-6 pb-28">
+      {/* GRAPH */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm">
+        <h3 className="font-bold text-gray-900 dark:text-white mb-1">
+          Weekly Activity
+        </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          Your activity compared with others
+        </p>
+
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid stroke={gridColor} vertical={false} />
+              <XAxis
+                dataKey="day"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: axisColor, fontSize: 12 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: axisColor, fontSize: 12 }}
+                allowDecimals={false}
+              />
+
+              {players.map(player => (
+                <Line
+                  key={player}
+                  type="monotone"
+                  dataKey={player}
+                  stroke={colorMap[player]}
+                  strokeWidth={player === 'You' ? 3 : 2}
+                  dot={{
+                    r: hasSinglePoint ? 6 : 4,
+                    strokeWidth: 2,
+                    fill: colorMap[player],
+                  }}
+                  activeDot={false}
+                  connectNulls
+                >
+                  {hasSinglePoint && (
+                    <LabelList
+                      dataKey={player}
+                      position="top"
+                      formatter={(v: number) =>
+                        v !== undefined ? `${player}: ${v}` : ''
+                      }
+                      style={{
+                        fontSize: 11,
+                        fill: colorMap[player],
+                        fontWeight: player === 'You' ? 600 : 500,
+                      }}
+                    />
+                  )}
+                </Line>
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* LEGEND */}
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+          {players.map(player => (
+            <div
+              key={player}
+              className="flex items-center gap-2 text-xs font-medium"
+            >
+              <span
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: colorMap[player] }}
+              />
+              <span
+                className={
+                  player === 'You'
+                    ? 'text-gray-900 dark:text-white font-semibold'
+                    : 'text-gray-600 dark:text-gray-400'
+                }
+              >
+                {player}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* STATS */}
+      <div className="grid grid-cols-2 gap-4">
+        <StatCard label="Score" value={stats.score} />
+        <StatCard label="Rank" value={`#${stats.rank}`} />
+        <StatCard
+          label="Current Streak"
+          value={`🔥 ${stats.current_streak}`}
+          highlight
+        />
+        <StatCard
+          label="Longest Streak"
+          value={stats.longest_streak}
+        />
+      </div>
+    </div>
+  );
 };
+
+const StatCard = ({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: number | string;
+  highlight?: boolean;
+}) => (
+  <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm text-center">
+    <div
+      className={`text-2xl font-bold ${
+        highlight
+          ? 'text-green-500'
+          : 'text-gray-900 dark:text-white'
+      }`}
+    >
+      {value}
+    </div>
+    <div className="mt-1 text-[11px] uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">
+      {label}
+    </div>
+  </div>
+);
 
 export default Stats;

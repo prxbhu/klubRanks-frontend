@@ -30,8 +30,31 @@ export const Settings: React.FC<SettingsProps> = ({ clubId }) => {
 
     const isCreator = currentUser && club && currentUser.id === club.createdBy;
 
+        const handleShare = async () => {
+        const shareData = {
+            title: 'Join my club on ClubRank',
+            text: 'Compete with me on ClubRank!',
+            url: shareUrl,
+        };
+
+        try {
+            if (navigator.share) {
+            await navigator.share(shareData);
+            return;
+            }
+        } catch {
+            // ignored
+        }
+
+        handleCopy();
+        setCopied(true);
+        };
+
+
+
+
     const handleCopy = () => {
-        navigator.clipboard.writeText(shareUrl); // Copy URL instead of code
+        navigator.clipboard.writeText(shareUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -76,7 +99,7 @@ export const Settings: React.FC<SettingsProps> = ({ clubId }) => {
                         {shareUrl}
                     </div>
                     <button 
-                        onClick={handleCopy}
+                        onClick={handleShare}
                         className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl px-4 flex items-center justify-center transition-colors min-w-[50px]"
                     >
                         {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
