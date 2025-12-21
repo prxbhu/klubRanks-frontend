@@ -11,9 +11,9 @@ export interface Club {
   description: string;
   code: string;
   memberCount: number;
-  lastActive: string; // not being used
+  lastActive: string; 
+  nextCheckIn: string;
   actionName: string; // e.g. "Pages", "Pushups", "Count"
-  cooldownMinutes: number;  // not being used
   currentRank: number;
   createdBy: string;
   isPrivate: boolean;

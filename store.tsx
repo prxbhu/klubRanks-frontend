@@ -103,12 +103,12 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
                  description: c.description || '',
                  memberCount: c.number_of_members,
                  activeText: 'Active recently',
-                 lastActive: new Date().toISOString(),
+                 lastActive: c.last_checkedin,
+                 nextCheckIn: c.next_checkin,
                  actionName: c.action || 'Points', 
-                 cooldownMinutes: 10,
                  code: c.code,
                  currentRank: c.current_rank,
-                 createdBy: c.created_by.toString(), // Added mapping
+                 createdBy: c.created_by.toString(), 
                  isPrivate: c.is_private
 
              }));
@@ -249,16 +249,24 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   }, [token]);
 
   const incrementScore = useCallback(async (clubId: string): Promise<boolean> => {
-    if (!token) return false;
-    try {
-        await api.updateLeaderboardScoreApi(token, clubId);
-        await loadClubData(clubId);
-        return true;
-    } catch (e) {
-        console.error("Failed to increment", e);
-        return false;
-    }
-  }, [token, loadClubData]);
+  if (!token) return false;
+
+  try {
+    await api.updateLeaderboardScoreApi(token, clubId);
+
+    // 🔁 refresh everything that depends on this action
+    await Promise.all([
+      loadClubData(clubId), // leaderboard + messages
+      refreshClubs(),       // nextCheckIn, rank, lastActive
+    ]);
+
+    return true;
+  } catch (e) {
+    console.error("Failed to increment", e);
+    return false;
+  }
+}, [token, loadClubData, refreshClubs]);
+
 
   const sendMessage = useCallback(async (clubId: string, text: string) => {
     if (!token || !currentUser) return;

@@ -88,6 +88,8 @@ export interface BackendClub {
   description?: string | null;
   is_private: boolean;
   number_of_members: number;
+  last_checkedin?: string | null;
+  next_checkin?: string | null;
   created_by: number;
   created_at: string;
   code: string;
