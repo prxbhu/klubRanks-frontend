@@ -25,7 +25,7 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
   const [loading, setLoading] = useState(true);
 
   // NEW: selected player from legend
-  const [activePlayer, setActivePlayer] = useState<string | null>(null);
+  const [activePlayer, setActivePlayer] = useState<string | null>("You");
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -107,15 +107,6 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
   };
 }, [stats]);
 
-    //select "You" by default if present
-      useEffect(() => {
-      if (!players.length) return;
-
-      // Select "You" by default if present
-      if (players.includes('You')) {
-        setActivePlayer('You');
-      }
-    }, [players]);
 
 
   const hasSinglePoint =
