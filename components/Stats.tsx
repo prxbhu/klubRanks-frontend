@@ -20,32 +20,40 @@ const YOU_COLOR = '#22c55e'; // green
 const OTHER_COLORS = ['#60a5fa', '#f59e0b', '#a78bfa', '#f87171'];
 
 export const Stats: React.FC<StatsProps> = ({ club }) => {
-  const { theme } = useApp();
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { theme, clubStats, fetchClubStats } = useApp();
+
+  const [stats, setStats] = useState<UserStats | null>(
+    clubStats?.[club.id] ?? null
+  );
+  const [loading, setLoading] = useState(!clubStats?.[club.id]);
+
+
 
   // NEW: selected player from legend
   const [activePlayer, setActivePlayer] = useState<string | null>("You");
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
+  let mounted = true;
 
-      try {
-        const data = await getUserStatsApi(token, club.id);
-        setStats(data);
-      } catch (e) {
-        console.error('Failed to fetch stats', e);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const refresh = async () => {
+    const data = await fetchClubStats(club.id);
+    if (mounted && data) {
+      setStats(data);
+      setLoading(false);
+    }
+  };
 
-    fetchStats();
-    const interval = setInterval(fetchStats, 5000);
-    return () => clearInterval(interval);
-  }, [club.id]);
+  // 🔹 do NOT block render
+  refresh();
+
+  const interval = setInterval(refresh, 5000);
+  return () => {
+    mounted = false;
+    clearInterval(interval);
+  };
+}, [club.id, fetchClubStats]);
+
+
 
   const axisColor = theme === 'dark' ? '#9ca3af' : '#6b7280';
   const gridColor = theme === 'dark' ? '#374151' : '#e5e7eb';
@@ -142,7 +150,7 @@ export const Stats: React.FC<StatsProps> = ({ club }) => {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={chartData}
-              margin={{ top: 10, right: 8, left: -12, bottom: 0 }}
+              margin={{ top: 10, right: 8, left: 0, bottom: 0 }}
             >
 
               <CartesianGrid stroke={gridColor} vertical={false} />

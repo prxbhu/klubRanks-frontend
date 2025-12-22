@@ -161,7 +161,7 @@ const handleIncrement = async () => {
   setAnimateButton(true);
   setShowParticles(true);
 
-  const success = await incrementScore(id);
+  incrementScore(id);
 
   setTimeout(() => setAnimateButton(false), 200);
   setTimeout(() => setShowParticles(false), 1000);

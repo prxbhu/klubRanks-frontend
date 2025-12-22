@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { User, Club, Member, Message } from './types';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
+import { User, Club, Member, Message, UserStats } from './types';
 import * as api from './api';
 
 interface AppState {
@@ -21,6 +21,9 @@ interface AppState {
   loadClubData: (clubId: string) => Promise<void>;
   updateAvatar: (avatarId: string) => Promise<void>;
   refreshClubs: () => Promise<void>;
+  clubStats: Record<string, UserStats | null>;
+  fetchClubStats: (clubId: string) => Promise<UserStats | null>;
+  loadMoreMessages: (clubId: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -54,6 +57,14 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       if (saved === 'dark' || saved === 'light') return saved;
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
+
+  const [clubStats, setClubStats] = useState<
+    Record<string, UserStats | null>
+    >({});
+        const messageOffsets = useRef<Record<string, number>>({});
+    const messageHasMore = useRef<Record<string, boolean>>({});
+
+
 
   useEffect(() => {
       const root = window.document.documentElement;
@@ -242,6 +253,9 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
               type: (m.type as 'user' | 'system') || 'user'
           })).reverse(); 
           setMessages(prev => ({ ...prev, [clubId]: mappedMessages }));
+          messageOffsets.current[clubId] = 0;
+            messageHasMore.current[clubId] = true;
+
 
       } catch (e) {
           console.error("Error loading club data", e);
@@ -258,6 +272,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     await Promise.all([
       loadClubData(clubId), // leaderboard + messages
       refreshClubs(),       // nextCheckIn, rank, lastActive
+      fetchClubStats(clubId)  // user stats
     ]);
 
     return true;
@@ -278,11 +293,80 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     }
   }, [token, currentUser, loadClubData]);
 
+
+  const fetchClubStats = useCallback(
+  async (clubId: string): Promise<UserStats | null> => {
+    if (!token) return null;
+
+    try {
+      const data = await api.getUserStatsApi(token, clubId);
+
+      setClubStats(prev => ({
+        ...prev,
+        [clubId]: data,
+      }));
+
+      return data;
+    } catch (e) {
+      console.error('Failed to fetch club stats', e);
+      return null;
+    }
+  },
+  [token],
+);
+
+const loadMoreMessages = useCallback(
+  async (clubId: string) => {
+    if (!token) return;
+
+    const offset = messageOffsets.current[clubId] ?? 0;
+    const hasMore = messageHasMore.current[clubId] ?? true;
+
+    if (!hasMore) return;
+
+    try {
+      const older = await api.getClubMessagesApi(
+        token,
+        clubId,
+        50,
+        offset + 50,
+      );
+
+      if (!older || older.length === 0) {
+        messageHasMore.current[clubId] = false;
+        return;
+      }
+
+      messageOffsets.current[clubId] = offset + 50;
+
+      const mapped: Message[] = older.map((m, idx) => ({
+        id: `old-${offset}-${idx}-${m.timestamp}`,
+        userId: m.user.id.toString(),
+        username: m.user.username,
+        avatarId: m.user.avatar_id,
+        text: m.message,
+        timestamp: m.timestamp,
+        type: (m.type as 'user' | 'system') || 'user',
+      })).reverse();
+
+      setMessages(prev => ({
+        ...prev,
+        [clubId]: [...mapped, ...(prev[clubId] || [])],
+      }));
+    } catch (e) {
+      console.error('Failed to load older messages', e);
+    }
+  },
+  [token],
+);
+
+
+
   return (
     <AppContext.Provider value={{ 
         currentUser, clubs, members, messages, theme, toggleTheme,
         login, signup, logout, createClub, updateClub, joinClub, leaveClub,
-        incrementScore, sendMessage, loadClubData, updateAvatar, refreshClubs
+        incrementScore, sendMessage, loadClubData, updateAvatar, refreshClubs, fetchClubStats, clubStats, loadMoreMessages
     }}>
       {children}
     </AppContext.Provider>

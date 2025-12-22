@@ -1,4 +1,4 @@
-const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://192.168.88.18:8080';
+const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://43.205.201.26:8080';
 export class ApiError extends Error {
   status: number;
 

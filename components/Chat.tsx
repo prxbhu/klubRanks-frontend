@@ -10,34 +10,75 @@ interface ChatProps {
     clubId: string;
 }
 
-const getUserColor = (username: string) => {
-    const colors = ['bg-yellow-100 text-yellow-700', 'bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700', 'bg-pink-100 text-pink-700'];
-    let hash = 0;
-    if(username) {
-        for (let i = 0; i < username.length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
-};
 
 export const Chat: React.FC<ChatProps> = ({ messages, clubId }) => {
-    const { sendMessage, currentUser } = useApp();
+    const isFirstLoad = useRef(true);
+    const { sendMessage, currentUser, loadMoreMessages } = useApp();
     const [text, setText] = useState('');
     const bottomRef = useRef<HTMLDivElement>(null);
 
+    const containerRef = useRef<HTMLDivElement>(null);
+    const shouldStickToBottom = useRef(true);
+
+    const handleScroll = () => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    if (el.scrollTop < 40) {
+        loadMoreMessages(clubId);
+    }
+    };
+
+
+
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = containerRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+
+    // User is near bottom (within 40px)
+    shouldStickToBottom.current =
+        scrollHeight - (scrollTop + clientHeight) < 40;
     }, [messages]);
+
+        useEffect(() => {
+    // FIRST open → always jump to bottom
+    if (isFirstLoad.current) {
+        bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+        isFirstLoad.current = false;
+        return;
+    }
+
+    // Normal behavior (polling, updates)
+    if (shouldStickToBottom.current) {
+        bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+    }
+    }, [messages]);
+
+    useEffect(() => {
+  isFirstLoad.current = true;
+}, [clubId]);
+
+
+
 
     const handleSend = (e: React.FormEvent) => {
         e.preventDefault();
         if (!text.trim()) return;
         sendMessage(clubId, text);
         setText('');
+        shouldStickToBottom.current = true;
     };
 
     return (
         <div className="flex flex-col h-[calc(100vh-340px)]"> 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+            <div
+                ref={containerRef}
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar"
+                >
+
                 {(!messages || messages.length === 0) && (
                     <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 opacity-60">
                         <MessageSquare className="w-10 h-10 mb-2" />
