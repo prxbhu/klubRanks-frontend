@@ -102,6 +102,8 @@ export const ClubView: React.FC = () => {
   const [animateButton, setAnimateButton] = useState(false);
   const [showParticles, setShowParticles] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  
+  const [processing, setProcessing] = useState(false);
 
   const [displayScore, setDisplayScore] = useState(0);
   const [remainingMs, setRemainingMs] = useState(0);
@@ -153,20 +155,26 @@ export const ClubView: React.FC = () => {
     return () => clearInterval(interval);
   }, [club?.nextCheckIn]);
 
-  const canIncrement = remainingMs <= 0;
+  // FIX: Include processing in the check
+  const canIncrement = remainingMs <= 0 && !processing;
 
-const handleIncrement = async () => {
-  if (!id || !canIncrement) return;
+  const handleIncrement = async () => {
+    if (!id || !canIncrement) return;
 
-  setAnimateButton(true);
-  setShowParticles(true);
+    // FIX: Lock immediately
+    setProcessing(true);
+    setAnimateButton(true);
+    setShowParticles(true);
 
-  incrementScore(id);
-
-  setTimeout(() => setAnimateButton(false), 200);
-  setTimeout(() => setShowParticles(false), 1000);
-};
-
+    try {
+      await incrementScore(id);
+    } finally {
+      // FIX: Unlock after request finishes (backend should have updated nextCheckIn by now)
+      setProcessing(false);
+      setAnimateButton(false);
+      setShowParticles(false);
+    }
+  };
 
   if (!club) {
     return (
