@@ -39,6 +39,10 @@ export interface Message {
   text: string;
   timestamp: string; // ISO string
   type: 'user' | 'system';
+  replyTo?: {
+      username: string;
+      text: string;
+  };
 }
 
 export interface GraphDataPoint {
