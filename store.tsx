@@ -17,7 +17,7 @@ interface AppState {
   joinClub: (clubId: string) => Promise<void>;
   leaveClub: (clubId: string) => Promise<void>;
   incrementScore: (clubId: string) => Promise<boolean>;
-  sendMessage: (clubId: string, text: string) => Promise<void>;
+  sendMessage: (clubId: string, text: string, replyToId?: string) => Promise<void>;
   loadClubData: (clubId: string) => Promise<void>;
   updateAvatar: (avatarId: string) => Promise<void>;
   refreshClubs: () => Promise<void>;
@@ -244,7 +244,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
 
           const backendMessages = await api.getClubMessagesApi(token, clubId);
           const mappedMessages: Message[] = (backendMessages || []).map((m, idx) => ({
-              id: `msg-${idx}-${m.timestamp}`,
+              id: m.id.toString(),
               userId: m.user.id.toString(),
               username: m.user.username,
               avatarId: m.user.avatar_id,
@@ -283,10 +283,10 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
 }, [token, loadClubData, refreshClubs]);
 
 
-  const sendMessage = useCallback(async (clubId: string, text: string) => {
+  const sendMessage = useCallback(async (clubId: string, text: string, replyToId?: string) => {
     if (!token || !currentUser) return;
     try {
-        await api.sendMessageApi(token, clubId, text);
+        await api.sendMessageApi(token, clubId, text, replyToId);
         await loadClubData(clubId);
     } catch (e) {
         console.error("Failed to send message", e);

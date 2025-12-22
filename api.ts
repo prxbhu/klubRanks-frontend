@@ -205,10 +205,15 @@ export async function getUserStatsApi(token: string, clubId: string) {
 // -------- Messages --------
 
 export interface BackendClubMessage {
+  id: number;
   user: LeaderboardUser;
   message: string;
   timestamp: string;
   type: string;
+  reply_to?: {
+      user: LeaderboardUser;
+      message: string;
+  };
 }
 
 export async function getClubMessagesApi(
@@ -228,13 +233,29 @@ export async function sendMessageApi(
   token: string,
   clubId: string,
   text: string,
+  replyToId?: string
 ) {
+  const body: any = { message: text };
+  if (replyToId) {
+      body.reply_to_id = parseInt(replyToId, 10);
+  }
   return apiFetch<{ message: string }>(
     `/clubs/${clubId}/messages`,
     {
       method: 'POST',
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify(body),
     },
     token,
   );
+}
+
+export interface BackendClubMessage {
+  user: LeaderboardUser;
+  message: string;
+  timestamp: string;
+  type: string;
+  reply_to?: {
+      user: LeaderboardUser;
+      message: string;
+  }
 }
