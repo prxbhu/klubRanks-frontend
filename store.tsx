@@ -61,10 +61,9 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   const [clubStats, setClubStats] = useState<
     Record<string, UserStats | null>
     >({});
-        const messageOffsets = useRef<Record<string, number>>({});
-    const messageHasMore = useRef<Record<string, boolean>>({});
-
-
+    
+  const messageOffsets = useRef<Record<string, number>>({});
+  const messageHasMore = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
       const root = window.document.documentElement;
@@ -243,19 +242,45 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
           setMembers(prev => ({ ...prev, [clubId]: mappedMembers }));
 
           const backendMessages = await api.getClubMessagesApi(token, clubId);
-          const mappedMessages: Message[] = (backendMessages || []).map((m, idx) => ({
+          const mappedMessages: Message[] = (backendMessages || []).map((m) => ({
               id: m.id.toString(),
-              userId: m.user.id.toString(),
-              username: m.user.username,
-              avatarId: m.user.avatar_id,
+              // FIX: Handle missing user object (e.g. system messages)
+              userId: m.user ? m.user.id.toString() : 'system',
+              username: m.user ? m.user.username : 'System',
+              avatarId: m.user ? m.user.avatar_id : undefined,
               text: m.message,
               timestamp: m.timestamp,
-              type: (m.type as 'user' | 'system') || 'user'
-          })).reverse(); 
-          setMessages(prev => ({ ...prev, [clubId]: mappedMessages }));
-          messageOffsets.current[clubId] = 0;
-            messageHasMore.current[clubId] = true;
+              type: (m.type as 'user' | 'system') || 'user',
+              replyTo: m.reply_to ? { username: m.reply_to.user.username, text: m.reply_to.message } : undefined
+          })).reverse(); // Oldest to newest
 
+          // FIX: Merge with existing messages to avoid deleting history during polling
+          setMessages(prev => {
+              const current = prev[clubId] || [];
+              
+              // 1. Create a map of existing messages for O(1) lookup
+              const messageMap = new Map(current.map(m => [m.id, m]));
+              
+              // 2. Add or update with new messages
+              // mappedMessages contains the LATEST 50. We want to update any of those that changed
+              // and add any that are strictly new.
+              mappedMessages.forEach(m => {
+                  messageMap.set(m.id, m);
+              });
+
+              // 3. Convert back to array and sort by timestamp
+              const merged = Array.from(messageMap.values()).sort((a, b) => 
+                  new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              );
+
+              return { ...prev, [clubId]: merged };
+          });
+
+          // If this is the very first load and we haven't set offsets, init them
+          if (messageOffsets.current[clubId] === undefined) {
+             messageOffsets.current[clubId] = 0;
+             messageHasMore.current[clubId] = true;
+          }
 
       } catch (e) {
           console.error("Error loading club data", e);
@@ -319,17 +344,19 @@ const loadMoreMessages = useCallback(
   async (clubId: string) => {
     if (!token) return;
 
+    // Use current offset or 0. Since we are paging backwards, simple offset works.
     const offset = messageOffsets.current[clubId] ?? 0;
     const hasMore = messageHasMore.current[clubId] ?? true;
 
     if (!hasMore) return;
 
     try {
+      const nextOffset = offset + 50;
       const older = await api.getClubMessagesApi(
         token,
         clubId,
         50,
-        offset + 50,
+        nextOffset,
       );
 
       if (!older || older.length === 0) {
@@ -337,30 +364,38 @@ const loadMoreMessages = useCallback(
         return;
       }
 
-      messageOffsets.current[clubId] = offset + 50;
+      messageOffsets.current[clubId] = nextOffset;
 
-      const mapped: Message[] = older.map((m, idx) => ({
-        id: `old-${offset}-${idx}-${m.timestamp}`,
-        userId: m.user.id.toString(),
-        username: m.user.username,
-        avatarId: m.user.avatar_id,
+      const mapped: Message[] = older.map((m) => ({
+        id: m.id.toString(), // FIX: Use real ID to allow deduping
+        // FIX: Handle missing user object
+        userId: m.user ? m.user.id.toString() : 'system',
+        username: m.user ? m.user.username : 'System',
+        avatarId: m.user ? m.user.avatar_id : undefined,
         text: m.message,
         timestamp: m.timestamp,
         type: (m.type as 'user' | 'system') || 'user',
+        replyTo: m.reply_to ? { username: m.reply_to.user.username, text: m.reply_to.message } : undefined
       })).reverse();
 
-      setMessages(prev => ({
-        ...prev,
-        [clubId]: [...mapped, ...(prev[clubId] || [])],
-      }));
+      setMessages(prev => {
+          const current = prev[clubId] || [];
+          
+          // Merge strictly: Prepend older messages that are not already in list
+          const currentIds = new Set(current.map(c => c.id));
+          const uniqueOlder = mapped.filter(m => !currentIds.has(m.id));
+          
+          return {
+            ...prev,
+            [clubId]: [...uniqueOlder, ...current],
+          };
+      });
     } catch (e) {
       console.error('Failed to load older messages', e);
     }
   },
   [token],
 );
-
-
 
   return (
     <AppContext.Provider value={{ 
