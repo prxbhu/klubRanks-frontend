@@ -99,6 +99,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     localStorage.removeItem('user');
     setToken(null);
     setCurrentUser(null);
+    console.log("current user not authorised")
     setClubs([]);
   }, []);
 
