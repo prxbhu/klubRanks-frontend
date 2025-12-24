@@ -127,7 +127,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
           }
       } catch (e) {
           console.error("Failed to load clubs", e);
-          if ((e as Error).message.includes("401")) logout();
+          logout();
       }
   }, [token, logout]);
 
